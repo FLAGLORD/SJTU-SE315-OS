@@ -79,7 +79,7 @@ static struct page *get_buddy_chunk(struct phys_mem_pool *pool,
  * split_page: split the memory block into two smaller sub-block, whose order
  * is half of the origin page.
  * pool @ physical memory structure reserved in the kernel
- * order @ order for origin page block
+ * order @ order for target page block
  * page @ splitted page
  * 
  * Hints: don't forget to substract the free page number for the corresponding free_list.
@@ -98,7 +98,7 @@ static struct page *split_page(struct phys_mem_pool *pool, u64 order,
 /*
  * buddy_get_pages: get free page from buddy system.
  * pool @ physical memory structure reserved in the kernel
- * order @ get the (1<<order) continous pages from the buddy system
+ * order @ get the struct page of (1<<order) continous pages from the buddy system
  * 
  * Hints: Find the corresonding free_list which can allocate 1<<order
  * continuous pages and don't forget to split the list node after allocation   

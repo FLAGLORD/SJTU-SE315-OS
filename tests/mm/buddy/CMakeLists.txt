@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 project(test_buddy C)
 set(SOURCE_PATH ../../../kernel/mm)
 set(OBJECT_DIR ${CMAKE_BINARY_DIR}/CMakeFiles/test_buddy.dir)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage -g")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fprofile-arcs -ftest-coverage -g -include string.h")
 
 set(ARCH "aarch64")
 set(PLAT "raspi3")

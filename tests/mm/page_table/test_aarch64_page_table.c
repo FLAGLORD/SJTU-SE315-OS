@@ -22,7 +22,7 @@ void *get_pages(int order)
 	return ptr;
 }
 
-void free_page(void *page)
+void free_pages(void *page)
 {
 	mu_assert(page != NULL, "Freeing nullptr!");
 	free(page);
