@@ -64,13 +64,6 @@ u64 switch_context(void)
 	if (target_thread->thread_ctx->type != TYPE_IDLE &&
 	    target_thread->thread_ctx->type != TYPE_KERNEL &&
 	    target_thread->thread_ctx->type != TYPE_TESTS) {
-
-		BUG_ON(!target_thread->vmspace);
-		/*
-		 * Recording the CPU the thread runs on: for TLB maintainence.
-		 * switch_context is always required for running a (new) thread.
-		 * So, we invoke record_running_cpu here.
-		 */
 		BUG_ON(!target_thread->vmspace);
 		switch_thread_vmspace_to(target_thread);
 	}
