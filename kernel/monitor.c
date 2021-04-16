@@ -29,7 +29,25 @@ int stack_backtrace()
 {
 	printk("Stack backtrace:\n");
 
+	
 	// Your code here.
+
+	//fp of current function(stack_backstrce)
+	u64 stackBacktraceFP = read_fp();
+	//fp of the caller of current function(stack_backstrace)
+	u64 callStackBackstraceFP = *(u64 *)stackBacktraceFP;
+
+	u64 fp = callStackBackstraceFP; // value of fp;
+
+	do{
+		printk("LR %lx FP %lx Args ",*(u64 *)(fp + 8),fp);	
+		u64 argAdrBegin = fp - 16; // address of argList begins at fp - 16
+		for(int i = 0; i < 5; ++i){
+			printk("%lx ", *(u64 *)(argAdrBegin + 8 * i));
+		}
+		printk("\n");
+		fp = *(u64 *)fp; // value of parent fp
+	}while(fp);//value of fp != 0
 
 	return 0;
 }
