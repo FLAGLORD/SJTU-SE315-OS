@@ -124,15 +124,7 @@ static int printk_write_num(char **out, long long i, int base, int sign,
 	s = print_buf + PRINT_BUF_LEN - 1;
 	*s = '\0';
 
-	if (neg) {
-		if (width && (flags & PAD_ZERO)) {
-			simple_outputchar(out, '-');
-			++pc;
-			--width;
-		} else {
-			*--s = '-';
-		}
-	}
+	
 	while(u){
 		--s;
 		unsigned int curBit = u % base;
@@ -146,7 +138,16 @@ static int printk_write_num(char **out, long long i, int base, int sign,
 				*s = 'A' + curBit - 10;
 		}
 	}
-
+	
+	if (neg) {
+		if (width && (flags & PAD_ZERO)) {
+			simple_outputchar(out, '-');
+			++pc;
+			--width;
+		} else {
+			*--s = '-';
+		}
+	}
 	return pc + prints(out, s, width, flags);
 }
 

@@ -167,6 +167,12 @@ static u64 load_binary(struct process *process,
 				r = -ENOMEM;
 				goto out_free_cap;
 			}
+			// Note:不能使用p_filesz，因为.bss在elf不占空间，所以包含.bss的segment这两个值不一致
+			seg_sz = elf->p_headers[i].p_memsz;
+			p_vaddr = elf->p_headers[i].p_vaddr;
+			// 对seg_size以PAGE_SIZE的粒度向上取整,此外p_vaddr应该不是页对齐的，也需要考虑 
+			seg_map_sz = ROUND_UP(seg_sz + p_vaddr,PAGE_SIZE) - ROUND_DOWN(p_vaddr,PAGE_SIZE);
+			
 			pmo_init(pmo, PMO_DATA, seg_map_sz, 0);
 			pmo_cap[i] = cap_alloc(process, pmo, 0);
 			if (pmo_cap[i] < 0) {
@@ -180,8 +186,14 @@ static u64 load_binary(struct process *process,
 			 * The physical address of a pmo can be get from pmo->start.
 			 */
 
+			//file_size与seg_size差值对应的部分为0
 			flags = PFLAGS2VMRFLAGS(elf->p_headers[i].p_flags);
 
+			vaddr_t pmo_start_vaddr = (vaddr_t)(phys_to_virt(pmo->start));
+			pmo_start_vaddr += p_vaddr - ROUND_DOWN(p_vaddr,PAGE_SIZE);
+			memcpy((char *)pmo_start_vaddr,
+				bin + elf->p_headers[i].p_offset,
+				elf->p_headers[i].p_filesz);
 			ret = vmspace_map_range(vmspace,
 						ROUND_DOWN(p_vaddr, PAGE_SIZE),
 						seg_map_sz, flags, pmo);
