@@ -140,15 +140,13 @@ u64 switch_context(void)
  */
 void sys_yield(void)
 {
-	//reset budget to sched current thread immediately
+	// set budget to 0,否则的话 current_thread 无法被调度走
 	if(current_thread !=NULL){
 		current_thread->thread_ctx->sc->budget = 0;
 	}
-	//schedule
-	//then switch context(change vmspace, change pgtbl addr)
-	//then eret:resume registers value in user mode
+
 	sched();
-	eret_to_thread(switch_context()); //return to user mode
+	eret_to_thread(switch_context());
 }
 
 int sched_init(struct sched_ops *sched_ops)

@@ -51,16 +51,23 @@ struct thread idle_threads[PLAT_CPU_NUM];
  */
 int rr_sched_enqueue(struct thread *thread)
 {
-	//pre-check boundary condition: NULL-pointer, enqueue ready thread, idle thread
-	if(thread == NULL || thread->thread_ctx == NULL || thread->thread_ctx->state == TS_READY){
+	//防止空指针
+	if(thread == NULL || thread->thread_ctx == NULL){
 		return -EINVAL;
 	}
+
+	//state为READY的 thread 说明已经进入队列
+	if(thread->thread_ctx->state == TS_READY){
+		return -EINVAL;
+	}
+
+	// 对IDLE THREAD进行特殊处理
 	if(thread->thread_ctx->type == TYPE_IDLE){
-		return 0; //return common val
+		return 0; 
 	}
 
 	u32 cpu_id = smp_get_cpu_id();
-	if(thread->thread_ctx->affinity != NO_AFF){ // assign to specific cpu core id
+	if(thread->thread_ctx->affinity != NO_AFF){
 		cpu_id = thread->thread_ctx->affinity;
 	}
 	if(cpu_id >= PLAT_CPU_NUM){
@@ -69,7 +76,7 @@ int rr_sched_enqueue(struct thread *thread)
 
 	list_append(&thread->ready_queue_node, &rr_ready_queue[cpu_id]);
 	thread->thread_ctx->state = TS_READY;
-	thread->thread_ctx->cpuid = cpu_id; //must set cpu id (what if different affinity cpu id)
+	thread->thread_ctx->cpuid = cpu_id; 
 	return 0;
 }
 
@@ -81,10 +88,17 @@ int rr_sched_enqueue(struct thread *thread)
  */
 int rr_sched_dequeue(struct thread *thread)
 {
-	//pre-check boundary condition: NULL-pointer, dequeue unready thread, idle thread
-	if(thread == NULL || thread->thread_ctx == NULL || thread->thread_ctx->state != TS_READY){
+	//防止空指针
+	if(thread == NULL || thread->thread_ctx == NULL){
 		return -EINVAL;
 	}
+
+	//只有状态为READY的THREAD能被调度
+	if(thread->thread_ctx->state != TS_READY){
+		return -EINVAL;
+	}
+
+	// 对IDLE THREAD进行特殊处理
 	if(thread->thread_ctx->type == TYPE_IDLE){
 		return 0;
 	}
@@ -112,11 +126,11 @@ struct thread *rr_sched_choose_thread(void)
 		return &(idle_threads[cpu_id]); //return idle thread
 	}
 
-	struct thread *chosen_thread = list_entry(rr_ready_queue[cpu_id].next, struct thread, ready_queue_node);
-	if(rr_sched_dequeue(chosen_thread) < 0){
+	struct thread *target = list_entry(rr_ready_queue[cpu_id].next, struct thread, ready_queue_node);
+	if(rr_sched_dequeue(target) < 0){
 		return NULL;
 	}
-	return chosen_thread;
+	return target;
 }
 
 static inline void rr_sched_refill_budget(struct thread *target, u32 budget)
@@ -138,7 +152,7 @@ static inline void rr_sched_refill_budget(struct thread *target, u32 budget)
  */
 int rr_sched(void)
 {
-	//add current thread budget judgement
+	//仍有budget，current thread不被抢占
 	if(current_thread != NULL && current_thread->thread_ctx != NULL 
 		&& current_thread->thread_ctx->sc != NULL
 		&& current_thread->thread_ctx->sc->budget != 0){
@@ -148,13 +162,14 @@ int rr_sched(void)
 	if(current_thread != NULL){
 		rr_sched_enqueue(current_thread);
 	}
-	struct thread *target_thread;
-	if((target_thread = rr_sched_choose_thread()) == NULL){
+	struct thread *target;
+	if((target = rr_sched_choose_thread()) == NULL){
 		return -EINVAL;
 	}
-	rr_sched_refill_budget(target_thread, DEFAULT_BUDGET);
+	
+	rr_sched_refill_budget(target, DEFAULT_BUDGET);
 
-	return switch_to_thread(target_thread);
+	return switch_to_thread(target);
 }
 
 /*

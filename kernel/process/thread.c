@@ -395,19 +395,19 @@ int sys_set_affinity(u64 thread_cap, s32 aff)
 	 */
 	if(thread == NULL){
 		ret = -ECAPBILITY;
-		goto obj_null_thread_fail;
+		goto fail_ret;
 	}
+	
 	if(aff >= PLAT_CPU_NUM && aff != NO_AFF){
 		ret = -EINVAL;
-		goto obj_put_thread;
+	}else{
+		thread->thread_ctx->affinity = aff;
 	}
-	thread->thread_ctx->affinity = aff;
 
-obj_put_thread:
 	if(thread_cap != -1){
 		obj_put(thread);
 	}
-obj_null_thread_fail:
+fail_ret:
 	return ret;
 }
 
@@ -431,14 +431,14 @@ int sys_get_affinity(u64 thread_cap)
 	 */
 	if(thread == NULL){
 		aff = -ECAPBILITY;
-		goto obj_null_thread_fail;
+		goto fail_ret;
+	}else{
+		aff = thread->thread_ctx->affinity;
 	}
-	aff = thread->thread_ctx->affinity;
 
-obj_put_thread:
 	if(thread_cap != -1){
 		obj_put(thread);
 	}
-obj_null_thread_fail:
+fail_ret:
 	return aff;
 }

@@ -42,7 +42,6 @@ void enable_smp_cores(void *addr)
 		 * before activating the next one
 		 */
 		while(cpu_status[i] != cpu_run){
-			; //wait
 		}
 	}
 

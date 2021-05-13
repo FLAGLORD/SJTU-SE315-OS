@@ -76,6 +76,7 @@ const void *syscall_table[NR_SYSCALL] = {
 	[SYS_cap_copy_from] = sys_cap_copy_from,
 	[SYS_set_affinity] = sys_set_affinity,
 	[SYS_get_affinity] = sys_get_affinity,
+	// add ipc_reg_call
 	[SYS_ipc_reg_call] = sys_ipc_reg_call,
 	/* 
 	 * Lab4
