@@ -39,6 +39,9 @@
 #define SYS_fs_load_cpio			253
 #define SYS_debug			        255
 
+// for lab4-bonus
+#define SYS_ipc_send 250
+#define SYS_ipc_recv 251
 int usys_fs_load_cpio(u64 vaddr);
 /* TEMP END */
 
@@ -75,3 +78,7 @@ int usys_read_pmo(u64 cap, u64 offset, void *buf, u64 size);
 int usys_transfer_caps(u64, int *, int, int *);
 
 void usys_top(void);
+
+// for lab4-bonus
+u64 usys_ipc_send(u32 conn_cap, u64 msg);
+u64 usys_ipc_recv();

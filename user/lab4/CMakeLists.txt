@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 
 set(TEST_LAB4_BINS
+    "ipc_send_test" "ipc_recv_test"
     "yield_single"
     "yield_spin"
     "yield_multi"
@@ -10,6 +11,7 @@ set(TEST_LAB4_BINS
     "ipc_data" "ipc_data_server"
     "ipc_reg" "ipc_reg_server"
      "ipc_mem" "ipc_mem_server"
+  
 )
 
 foreach(bin ${TEST_LAB4_BINS})

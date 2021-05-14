@@ -123,3 +123,11 @@ void ipc_return(int ret)
 {
 	usys_ipc_return((u64) ret);
 }
+
+// for lab4-bonus
+u64 ipc_send(ipc_struct_t *icb, u64 msg) {
+    return usys_ipc_send(icb->conn_cap, msg);
+}
+u64 ipc_recv() {
+    return usys_ipc_recv();
+}

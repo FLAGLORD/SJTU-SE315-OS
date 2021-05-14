@@ -93,5 +93,8 @@ const void *syscall_table[NR_SYSCALL] = {
 	/* TMP FS */
 	[SYS_fs_load_cpio] = sys_fs_load_cpio,
 
-	[SYS_debug] = sys_debug
+	[SYS_debug] = sys_debug,
+	//for lab4-bonus
+	[SYS_ipc_send] = sys_ipc_send,
+    [SYS_ipc_recv] = sys_ipc_recv
 };

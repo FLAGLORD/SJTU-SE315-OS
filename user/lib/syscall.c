@@ -205,3 +205,10 @@ void usys_top(void)
 {
 	syscall(SYS_top, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }
+//for lab4-bonus
+u64 usys_ipc_send(u32 conn_cap, u64 msg) {
+    return syscall(SYS_ipc_send, conn_cap, msg, 0, 0, 0, 0, 0, 0, 0);
+}
+u64 usys_ipc_recv() {
+    return syscall(SYS_ipc_recv, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+}
