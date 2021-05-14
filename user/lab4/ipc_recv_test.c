@@ -20,9 +20,13 @@ int main(int argc, char *argv[], char *envp[])
 	info_page = (struct info_page *)info_page_addr;
 	info_page->ready_flag = 1;
 
-	do{
-		ret = ipc_recv();
-	}while(ret == -EAGAIN);
+	while (info_page->exit_flag != 1) {
+		usys_yield();
+	}
+	info_page->exit_flag = 0;
+
+	ret = ipc_recv();
+	
 
 	while (info_page->exit_flag != 1) {
 		usys_yield();

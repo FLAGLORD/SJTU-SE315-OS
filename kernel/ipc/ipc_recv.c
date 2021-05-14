@@ -15,17 +15,16 @@
 
 u64 sys_ipc_recv()
 {
-    if(current_thread->active_conn == NULL){
-        return -ECAPBILITY;
+    //阻塞时应该放锁
+    unlock_kernel();
+    while(current_thread->active_conn == NULL){
+        kinfo("revcevive");
     }
 
     volatile u64 *shared_buf = (u64 *)current_thread->active_conn->buf.server_user_addr;
-    
-    // 设置为READY和是
+    // 设置为READY
     *shared_buf = IPC_READY;
 
-    //阻塞时应该放锁
-    unlock_kernel();
     while (*shared_buf != IPC_DATA_AVAILABLE) {
         //似乎使用yield比较号，但是这个ipc的实现毕竟是在kernel内
     }

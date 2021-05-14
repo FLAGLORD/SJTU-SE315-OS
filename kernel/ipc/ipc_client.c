@@ -94,7 +94,9 @@ static int create_connection(struct thread *source, struct thread *target,
 		ret = -ENOMEM;
 		goto out_fail;
 	}
-	conn->target = create_server_thread(target);
+	conn->target = target;
+	target->active_conn = conn;
+	target->active_conn->source = source;
 	if (!conn->target) {
 		ret = -ENOMEM;
 		goto out_fail;

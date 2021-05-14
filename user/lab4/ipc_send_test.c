@@ -55,14 +55,17 @@ int main(int argc, char *argv[], char *envp[])
 	fail_cond(ret < 0, "ipc_register_client failed\n");
 
 
+
 	// test ipc_send
+	printf("[Sender] begin send messgage\n");
+	info_page->exit_flag = 1;
 	do{
 		ret = ipc_send(&client_ipc_struct, (u64) 521);
 	}while( ret != 0);
 
 	printf("[Sender] send message %d!\n", 521);
-
 	printf("[Sender] exit\n");
+
 	info_page->exit_flag = 1;
 
 	return 0;
