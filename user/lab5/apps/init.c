@@ -17,6 +17,8 @@ static int tmpfs_scan_pmo_cap;
 
 /* fs_server_cap in current process; can be copied to others */
 int fs_server_cap;
+static int scan_ret;
+static char* ls_buf;
 
 #define BUFLEN	4096
 
@@ -89,6 +91,21 @@ int do_top()
 void fs_scan(char *path)
 {
 	// TODO: your code here
+
+	
+	int count = 4096/2;
+	struct fs_request fr;
+	fr.req = FS_REQ_SCAN;
+	fr.buff = NULL;
+	strcpy(fr.path+1, path);
+	fr.path[0] = '/';
+	fr.offset = 0;
+	fr.count = 0;
+
+	ipc_msg_t *ipc_msg = ipc_create_msg(tmpfs_ipc_struct, sizeof(fr)+count,1);
+	ipc_set_msg_data(ipc_msg, (void *)&fr, 0, sizeof(fr));
+	scan_ret = ipc_call(tmpfs_ipc_struct, ipc_msg);
+	ls_buf = (void *)ipc_msg + sizeof(*ipc_msg) + sizeof(fr);
 }
 
 int do_ls(char *cmdline)
