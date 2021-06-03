@@ -53,6 +53,15 @@ char *readline(const char *prompt)
 		if (c < 0)
 			return NULL;
 		// TODO: your code here
+		// TODO : Code Complement
+		if(c == '\n'){
+			usys_putc(c);
+			buf[ret] = '\0';
+			return buf;
+		}
+
+		buf[ret++] = c;	
+		usys_putc(c);
 
 	}
 	return buf;

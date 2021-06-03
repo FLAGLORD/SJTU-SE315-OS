@@ -2,6 +2,9 @@
 
 #include <lib/type.h>
 
+#define CPIO_FT_MASK 0170000
+#define CPIO_REG 0100000
+#define CPIO_DIR 0040000
 /* Spec from https://man.openbsd.org/FreeBSD-12.0/cpio.5 */
 
 struct cpio_newc_header {
