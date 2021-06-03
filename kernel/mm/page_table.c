@@ -44,11 +44,15 @@ static int set_pte_flags(pte_t * entry, vmr_prop_t flags, int kind)
 {
 	if (flags & VMR_WRITE)
 		entry->l3_page.AP = AARCH64_PTE_AP_HIGH_RW_EL0_RW;
+	else if(kind == KERNEL_PTE)
+		entry->l3_page.AP = AARCH64_PTE_AP_HIGH_RW_EL0_NA;
 	else
 		entry->l3_page.AP = AARCH64_PTE_AP_HIGH_RO_EL0_RO;
 
 	if (flags & VMR_EXEC)
 		entry->l3_page.UXN = AARCH64_PTE_UX;
+	else if(kind == KERNEL_PTE)
+		entry->l3_page.UXN = AARCH64_PTE_UXN;
 	else
 		entry->l3_page.UXN = AARCH64_PTE_UXN;
 
@@ -162,7 +166,32 @@ static int get_next_ptp(ptp_t * cur_ptp, u32 level, vaddr_t va,
 int query_in_pgtbl(vaddr_t * pgtbl, vaddr_t va, paddr_t * pa, pte_t ** entry)
 {
 	// <lab2>
-
+	ptp_t *cur_ptp = (ptp_t *)pgtbl;
+	ptp_t *next_ptp;
+	//逐级查询
+	for(int level  = 0;  level < 4; ++level){
+		int ret = get_next_ptp(cur_ptp, level, va, &next_ptp, entry, 0);
+		if(ret < 0){
+			return ret;
+		}
+		//block-entry 直接返回
+		if(ret == BLOCK_PTP){
+			switch (level)
+			{
+			case 1/* constant-expression */:
+				*pa = virt_to_phys((vaddr_t)next_ptp) + GET_VA_OFFSET_L1(va);
+				return  0;
+			case 2:
+				*pa = virt_to_phys((vaddr_t)next_ptp) + GET_VA_OFFSET_L2(va);
+				return  0;
+			default:
+				return -1;
+			}
+		}
+		cur_ptp = next_ptp;
+	}
+	//正常的4KB页			
+	*pa = virt_to_phys((vaddr_t)next_ptp) + GET_VA_OFFSET_L3(va);
 	// </lab2>
 	return 0;
 }
@@ -186,7 +215,40 @@ int map_range_in_pgtbl(vaddr_t * pgtbl, vaddr_t va, paddr_t pa,
 		       size_t len, vmr_prop_t flags)
 {
 	// <lab2>
+	pa = ROUND_DOWN(pa, PAGE_SIZE);
+	va = ROUND_DOWN(va, PAGE_SIZE);
+	len = ROUND_UP(len, PAGE_SIZE);
+	for(int i = 0; i < len / PAGE_SIZE; ++i){
+		ptp_t *cur_ptp = (ptp_t *)pgtbl;
+		ptp_t *next_ptp;
+		pte_t *entry;
+		//这边与上面不同只需循环到3，因为物理空间不需要由get_next_ptp来分配，因为地址已经指定
+		for(int level = 0; level < 3; ++level){
+			int ret = get_next_ptp(cur_ptp, level, va,  &next_ptp, &entry, 1);
+			if(ret < 0){
+				return ret;
+			}
+			if(ret == BLOCK_PTP){
+				return -1;
+			}
+			cur_ptp = next_ptp;
+		}
 
+		u32 index = GET_L3_INDEX(va);
+		entry = &(next_ptp->ent[index]);
+
+		entry->pte = 0;
+		entry->l3_page.is_valid = 1;
+		entry->l3_page.is_page = 1;
+		//指向指定的物理地址即可
+		entry->l3_page.pfn = pa >> PAGE_SHIFT;
+
+		set_pte_flags(entry, flags, flags & KERNEL_PT ? KERNEL_PTE : USER_PTE);
+
+		va += PAGE_SIZE;
+		pa += PAGE_SIZE;
+	}
+	flush_tlb();
 	// </lab2>
 	return 0;
 }
@@ -207,7 +269,34 @@ int map_range_in_pgtbl(vaddr_t * pgtbl, vaddr_t va, paddr_t pa,
 int unmap_range_in_pgtbl(vaddr_t * pgtbl, vaddr_t va, size_t len)
 {
 	// <lab2>
+	for(int i = 0; i < len/PAGE_SIZE; i++){
+		pte_t *entry;
+		ptp_t *cur_ptp = (ptp_t *)pgtbl;
+		ptp_t *next_ptp;
+		bool delete = false;
+		for(int level = 0; level < 3; ++level){
+			int ret = get_next_ptp(cur_ptp, level, va, &next_ptp, &entry, 0);
+			if(ret < 0){
+				break;
+			}
+			if(ret == BLOCK_PTP){
+				delete = true;
+				entry->table.is_valid = 0;
+				break;
+			}
+			cur_ptp = next_ptp;
+		}
 
+		if(!delete){
+			u32 index = GET_L3_INDEX(va);
+			entry = &(next_ptp->ent[index]);
+			entry->l3_page.is_valid = 0;
+		}
+
+		va += PAGE_SIZE;
+	}
+
+	flush_tlb();
 	// </lab2>
 	return 0;
 }

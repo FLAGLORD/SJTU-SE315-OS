@@ -129,7 +129,7 @@ u64 switch_context(void)
 	 * Return the correct value in order to make eret_to_thread work correctly
 	 * in main.c
 	 */
-	return 0;
+	return (u64)target_ctx->ec.reg;
 }
 
 /* SYSCALL functions */
@@ -140,6 +140,13 @@ u64 switch_context(void)
  */
 void sys_yield(void)
 {
+	// set budget to 0,否则的话 current_thread 无法被调度走
+	if(current_thread !=NULL){
+		current_thread->thread_ctx->sc->budget = 0;
+	}
+
+	sched();
+	eret_to_thread(switch_context());
 }
 
 void sys_top(void)

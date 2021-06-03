@@ -119,7 +119,26 @@ static int printk_write_num(char **out, long long i, int base, int sign,
 	// store the digitals in the buffer `print_buf`:
 	// 1. the last postion of this buffer must be '\0'
 	// 2. the format is only decided by `base` and `letbase` here
+	
+	//now pointer s should point to the last element of char array print_buf
+	s = print_buf + PRINT_BUF_LEN - 1;
+	*s = '\0';
 
+	
+	while(u){
+		--s;
+		unsigned int curBit = u % base;
+		u = u / base;
+		if(curBit <= 9){
+			*s = '0' + curBit;
+		}else{
+			if(letbase)
+				*s = 'a' + curBit - 10;
+			else
+				*s = 'A' + curBit - 10;
+		}
+	}
+	
 	if (neg) {
 		if (width && (flags & PAD_ZERO)) {
 			simple_outputchar(out, '-');
@@ -129,7 +148,6 @@ static int printk_write_num(char **out, long long i, int base, int sign,
 			*--s = '-';
 		}
 	}
-
 	return pc + prints(out, s, width, flags);
 }
 
