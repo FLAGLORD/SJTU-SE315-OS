@@ -17,17 +17,30 @@ static int tmpfs_scan_pmo_cap;
 
 /* fs_server_cap in current process; can be copied to others */
 int fs_server_cap;
+// add for scan
 static int scan_ret;
-static char* ls_buf;
 
 #define BUFLEN	4096
 
-static int do_complement(char *buf, char *complement, int complement_time)
+static int do_complement(char *buf, char *complement, int complement_time, int pos)
 {
 	int r = -1;
 	// TODO: your code here
-
-	return r;
+	fs_scan("");
+	if(scan_ret){
+		struct dirent *p = (struct dirent *)TMPFS_SCAN_BUF_VADDR;
+		for (int i = 0; i < scan_ret; i++) {
+			if(strncmp(buf, p->d_name, pos) == 0 && i>complement_time){
+				strcpy(complement, p->d_name + pos);
+				//printf("buf: %s, str: %s ret: %d\n", buf, p->d_name, ret);
+				complement_time = i;
+				break;
+			}
+			else
+				p = (void*) p + p->d_reclen;
+		}		
+	}
+	return complement_time;
 
 }
 
@@ -44,12 +57,13 @@ char *readline(const char *prompt)
 	signed char c = 0;
 	int ret = 0;
 	char complement[BUFLEN];
-	int complement_time = 0;
+	int complement_time = -1;
 
 	if (prompt != NULL) {
 		printf("%s", prompt);
 	}
-
+	
+	complement[0] = '\0';
 	while (1) {
 		c = getch();
 		if (c < 0)
@@ -57,9 +71,18 @@ char *readline(const char *prompt)
 		// TODO: your code here
 		// TODO : Code Complement
 		if(c == '\n'){
+			if(complement_time != -1)
+				printf(".*%s", complement);
 			usys_putc(c);
-			buf[ret] = '\0';
+			strcpy(buf+ret, complement);
+			buf[ret+strlen(complement)] = '\0';
+		//	printf("TEST: buf: %s\n",buf);
 			return buf;
+		}
+
+		if(c == '\t'){
+			complement_time = do_complement(buf, complement, complement_time, ret);
+			continue;
 		}
 
 		buf[ret++] = c;	
@@ -85,27 +108,30 @@ int do_cd(char *cmdline)
 int do_top()
 {
 	// TODO: your code here
+	usys_top();
 	return 0;
 }
 
 void fs_scan(char *path)
 {
 	// TODO: your code here
-
-	
-	int count = 4096/2;
 	struct fs_request fr;
 	fr.req = FS_REQ_SCAN;
+	fr.count = PAGE_SIZE;
+	fr.offset = 0;
 	fr.buff = NULL;
 	strcpy(fr.path+1, path);
-	fr.path[0] = '/';
-	fr.offset = 0;
-	fr.count = 0;
+	fr.path[0]='/';
 
-	ipc_msg_t *ipc_msg = ipc_create_msg(tmpfs_ipc_struct, sizeof(fr)+count,1);
-	ipc_set_msg_data(ipc_msg, (void *)&fr, 0, sizeof(fr));
+	ipc_msg_t *ipc_msg = ipc_create_msg(&ipc_struct, sizeof(fr), 1);
+	// printf("tag1\n");
+	ipc_set_msg_cap(ipc_msg, 0, tmpfs_scan_pmo_cap);
+	// printf("tag2\n");
+	ipc_set_msg_data(ipc_msg, &fr, 0, sizeof(fr));
+	// printf("tag3\n");
 	scan_ret = ipc_call(tmpfs_ipc_struct, ipc_msg);
-	ls_buf = (void *)ipc_msg + sizeof(*ipc_msg) + sizeof(fr);
+	// printf("tag4\n");
+	ipc_destroy_msg(ipc_msg);
 }
 
 int do_ls(char *cmdline)
@@ -118,6 +144,14 @@ int do_ls(char *cmdline)
 		cmdline++;
 	strcat(pathbuf, cmdline);
 	fs_scan(pathbuf);
+
+	printf("finish fs_scan\n");
+	struct dirent *p = (struct dirent *)TMPFS_SCAN_BUF_VADDR;
+	char str[64];
+	for (int i = 0; i < scan_ret; i++) {
+		printf("%s\n", p->d_name);
+		p = (void*) p + p->d_reclen;
+	}
 	return 0;
 }
 

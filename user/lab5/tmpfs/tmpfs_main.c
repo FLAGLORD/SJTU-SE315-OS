@@ -15,7 +15,12 @@ static void fs_dispatch(ipc_msg_t * ipc_msg)
 		switch (fr->req) {
 		case FS_REQ_SCAN:{
 				// TODO: you code here
-				while((ret = fs_server_scan(fr->path, fr->offset, fr->buff, fr->count)) != 0);
+				//while((ret = fs_server_scan(fr->path, fr->offset, fr->buff, fr->count)) != 0);
+				// use TEMPFS_SCAN_BUF_VADDR to return scan results
+				int cap = ipc_get_msg_cap(ipc_msg, 0);
+				ret = usys_map_pmo(SELF_CAP, cap, TMPFS_SCAN_BUF_VADDR,
+					   VM_READ | VM_WRITE);	   
+				ret = fs_server_scan(fr->path, fr->offset,(void *)TMPFS_SCAN_BUF_VADDR, (unsigned int)fr->count);
 				break;
 			}
 		case FS_REQ_MKDIR:
@@ -48,7 +53,6 @@ static void fs_dispatch(ipc_msg_t * ipc_msg)
 		case FS_REQ_READ:{
 				// TODO: you code here
 				// ret = fs_server_read(fr->path, fr->offset, fr->buff, fr->count);
-				printf("[fs server]I am reading\n");
 				u32 tmpfs_read_pmo_cap = ipc_get_msg_cap(ipc_msg, 0);
 				int ret = usys_map_pmo(SELF_CAP,
 					   tmpfs_read_pmo_cap,

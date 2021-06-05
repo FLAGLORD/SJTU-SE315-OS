@@ -170,12 +170,12 @@ u64 sys_ipc_call(u32 conn_cap, ipc_msg_t * ipc_msg)
 	 * capbilities in server thread in the ipc_msg.
 	 */
 
-	r = copy_to_user((char *)&ipc_msg->server_conn_cap,
-			 (char *)&conn->server_conn_cap, sizeof(u64));
+	r = ipc_send_cap(conn, ipc_msg);
 	if (r < 0)
 		goto out_obj_put;
 
-	r = ipc_send_cap(conn, ipc_msg);
+	r = copy_to_user((char *)&ipc_msg->server_conn_cap,
+			 (char *)&conn->server_conn_cap, sizeof(u64));
 	if (r < 0)
 		goto out_obj_put;
 
